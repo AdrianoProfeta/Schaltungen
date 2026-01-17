@@ -1,0 +1,1061 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Interaktive Schaltungen – UND, ODER, Kurzschluss, Wechselschaltung</title>
+  <style>
+    :root{
+      --bg:#0b0d12;
+      --panel:#121623;
+      --panel2:#0f1320;
+      --text:#e9ecf1;
+      --muted:#aab3c2;
+      --line:#2a3245;
+      --accent:#ff3b3b;
+      --lampOn:#ffd54f;
+      --lampOff:#c7cfdd;
+      --wire:#cfd6e6;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1000px 600px at 20% 0%, #192039 0%, var(--bg) 60%);
+      color:var(--text);
+      line-height:1.35;
+    }
+    header{
+      padding:18px 16px;
+      border-bottom:1px solid var(--line);
+      background: rgba(0,0,0,0.2);
+      position:sticky;
+      top:0;
+      backdrop-filter: blur(6px);
+      z-index:10;
+    }
+    header h1{margin:0 0 6px 0;font-size:18px;letter-spacing:.2px}
+    header p{margin:0;color:var(--muted);font-size:13px}
+
+    main{padding:16px;max-width:1200px;margin:0 auto}
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:14px;
+    }
+
+    section.circuit{
+      border:1px solid var(--line);
+      border-radius:14px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      overflow:hidden;
+    }
+    .c-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 14px 10px 14px;
+      border-bottom:1px solid var(--line);
+      background: rgba(255,255,255,0.02);
+    }
+    .c-head h2{margin:0;font-size:16px}
+    .c-head .hint{margin:2px 0 0 0;color:var(--muted);font-size:12px}
+
+    .c-body{
+      display:grid;
+      grid-template-columns: 420px 1fr;
+      gap:14px;
+      padding:14px;
+      align-items:start;
+    }
+
+    @media (max-width: 980px){
+      .c-body{grid-template-columns: 1fr;}
+    }
+
+    .panel{
+      background: rgba(0,0,0,0.22);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px;
+    }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 14px;
+      align-items:center;
+      margin-bottom:10px;
+    }
+
+    .toggle{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:8px 10px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background: rgba(255,255,255,0.03);
+      user-select:none;
+    }
+    .toggle input{display:none}
+    .pill{
+      width:38px;
+      height:22px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.05);
+      position:relative;
+      flex:0 0 auto;
+    }
+    .pill::after{
+      content:"";
+      position:absolute;
+      top:2px;
+      left:2px;
+      width:18px;
+      height:18px;
+      border-radius:999px;
+      background: var(--lampOff);
+      transition: transform .18s ease, background .18s ease;
+    }
+    .toggle input:checked + .pill::after{
+      transform: translateX(16px);
+      background: var(--lampOn);
+    }
+
+    .toggle .lbl{font-size:13px;color:var(--text)}
+    .toggle .lbl small{color:var(--muted);font-size:11px}
+    .toggle .val{
+      margin-left:6px;
+      font-weight:800;
+      min-width:12px;
+      display:inline-block;
+    }
+
+    .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+    button{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      padding:8px 10px;
+      border-radius:10px;
+      font-size:13px;
+    }
+    button:hover{background: rgba(255,255,255,0.07)}
+
+    .legend{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 16px;
+      font-size:12px;
+      color:var(--muted);
+      margin-top:8px;
+    }
+    .legend span{display:flex;align-items:center;gap:6px}
+    .dot{width:10px;height:10px;border-radius:999px;display:inline-block;border:1px solid var(--line)}
+    .dot.on{background:var(--lampOn)}
+    .dot.off{background:var(--lampOff)}
+
+    /* Table */
+    table.truth{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background: rgba(0,0,0,0.22);
+    }
+    table.truth th, table.truth td{
+      border-right:1px solid var(--line);
+      border-bottom:1px solid var(--line);
+      padding:8px 8px;
+      text-align:center;
+      font-size:13px;
+      min-width:38px;
+    }
+    table.truth th:first-child, table.truth td:first-child{
+      text-align:left;
+      padding-left:10px;
+      font-weight:700;
+      color: var(--text);
+      background: rgba(255,255,255,0.02);
+      position:sticky;
+      left:0;
+    }
+    table.truth thead th{
+      background: rgba(255,255,255,0.03);
+      font-weight:700;
+      color: var(--muted);
+    }
+    table.truth tr:last-child td{border-bottom:none}
+    table.truth tr td:last-child, table.truth tr th:last-child{border-right:none}
+
+    .activeCell{
+      color: var(--accent);
+      font-weight:900;
+      text-shadow: 0 0 10px rgba(255,59,59,0.45);
+    }
+    .activeCol{
+      background: rgba(255,59,59,0.08);
+    }
+    .clickable{
+      cursor:pointer;
+    }
+
+    /* SVG styling */
+    .diagramWrap{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    svg{
+      width:100%;
+      height:auto;
+      background: rgba(0,0,0,0.18);
+      border:1px solid var(--line);
+      border-radius:12px;
+    }
+    .wire{stroke: var(--wire); stroke-width:3; fill:none; stroke-linecap:round;}
+    /* Terminalkreise (Stromquelle): mit Hintergrund-Füllung, damit die Leitung nicht "durch" den Kreis läuft */
+    .terminal{fill: rgba(0,0,0,0.18); stroke: var(--wire); stroke-width:3;}
+
+    .lamp-bulb{fill: var(--lampOff); stroke: var(--wire); stroke-width:3;}
+    .lamp-cross{stroke: #2b2f3f; stroke-width:3; stroke-linecap:round;}
+    .lamp.on .lamp-bulb{fill: var(--lampOn); filter: drop-shadow(0 0 8px rgba(255,213,79,0.55));}
+    .lamp-label{fill: var(--text); font-size:14px; font-weight:700;}
+    .lamp-value{fill: var(--text); font-size:14px; font-weight:900;}
+
+    .switch .contact{fill: var(--wire);}    
+    .switch .blade{stroke: var(--wire); stroke-width:3; stroke-linecap:round;}
+    .switch .blade.open{opacity:1}
+    .switch .blade.closed{opacity:0}
+    .switch.on .blade.open{opacity:0}
+    .switch.on .blade.closed{opacity:1}
+    .switch-label{fill: var(--text); font-size:14px; font-weight:700;}
+
+    .spdt .blade.p0{opacity:1}
+    .spdt .blade.p1{opacity:0}
+    .spdt.on .blade.p0{opacity:0}
+    .spdt.on .blade.p1{opacity:1}
+    .posLabel{fill: var(--muted); font-size:12px; font-weight:800;}
+
+    .svgClickable{cursor:pointer;}
+
+    footer{
+      padding: 20px 16px 28px 16px;
+      color: var(--muted);
+      font-size: 12px;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    code{background: rgba(255,255,255,0.05); padding:2px 6px; border-radius:8px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Interaktive Physik-Schaltungen (Arbeitsblatt)</h1>
+    <p>Schalter umlegen → Spalte in der Tabelle wird rot markiert → Lampen leuchten (und zeigen <strong>0/1</strong>).</p>
+  </header>
+
+  <main>
+    <div id="app" class="grid"></div>
+  </main>
+
+  <footer>
+    Tipp: Du kannst auch direkt auf die Schalter im Schaltbild klicken. Ein Klick auf eine Spalten-Überschrift (z.&nbsp;B. <code>01</code>) setzt die Schalter auf diese Kombination.
+  </footer>
+
+<script>
+(() => {
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function htmlEl(tag, attrs = {}, children = []) {
+    const node = document.createElement(tag);
+    for (const [k,v] of Object.entries(attrs)) {
+      if (k === 'class') node.className = v;
+      else if (k === 'text') node.textContent = v;
+      else node.setAttribute(k, v);
+    }
+    for (const ch of children) {
+      if (ch == null) continue;
+      node.appendChild(typeof ch === 'string' ? document.createTextNode(ch) : ch);
+    }
+    return node;
+  }
+
+  function svgEl(tag, attrs = {}, children = []) {
+    const node = document.createElementNS(NS, tag);
+    for (const [k,v] of Object.entries(attrs)) node.setAttribute(k, v);
+    for (const ch of children) node.appendChild(ch);
+    return node;
+  }
+
+  function line(x1,y1,x2,y2, cls='wire') {
+    return svgEl('line', {x1,y1,x2,y2, class:cls});
+  }
+
+  function terminal(x,y) {
+    return svgEl('circle', {cx:x, cy:y, r:6, class:'terminal'});
+  }
+
+  // Stromquelle wie im Arbeitsblatt: zwei nahe beieinander liegende Klemmen (offene Kreise)
+  // Rückgabe: Koordinaten der linken/rechten Klemme, damit die Schaltung daran angeschlossen werden kann.
+  function sourceTerminals(svg, xCenter, y, gap = 14) {
+    const xL = xCenter - gap / 2;
+    const xR = xCenter + gap / 2;
+    svg.appendChild(terminal(xL, y));
+    svg.appendChild(terminal(xR, y));
+    return { xL, xR, y };
+  }
+
+  function createLamp(svg, x, y, id) {
+    const r = 18;
+    const g = svgEl('g', {class:'lamp', 'data-lamp': id});
+    const c = svgEl('circle', {cx:x, cy:y, r:r, class:'lamp-bulb'});
+    const cr1 = svgEl('line', {x1:x-r*0.55, y1:y-r*0.55, x2:x+r*0.55, y2:y+r*0.55, class:'lamp-cross'});
+    const cr2 = svgEl('line', {x1:x-r*0.55, y1:y+r*0.55, x2:x+r*0.55, y2:y-r*0.55, class:'lamp-cross'});
+    const lbl = svgEl('text', {x:x+r+10, y:y+5, class:'lamp-label'}, []);
+    lbl.textContent = id;
+
+    const val = svgEl('text', {x:x, y:y+r+20, class:'lamp-value', 'text-anchor':'middle'}, []);
+    val.textContent = '0';
+
+    g.appendChild(c);
+    g.appendChild(cr1);
+    g.appendChild(cr2);
+    g.appendChild(val);
+    g.appendChild(lbl);
+    svg.appendChild(g);
+    return {g, valText: val};
+  }
+
+  function setLamp(lampObj, state) {
+    lampObj.g.classList.toggle('on', state === 1);
+    lampObj.valText.textContent = String(state);
+  }
+
+  function createSwitchSPST(svg, x, y, id, orientation='vertical') {
+    const g = svgEl('g', {class:'switch spst svgClickable', 'data-switch': id, tabindex:'0', role:'button'});
+
+    // Contacts and blade
+    if (orientation === 'vertical') {
+      const len = 56;
+      const y1 = y - len/2;
+      const y2 = y + len/2;
+      const cTop = svgEl('circle', {cx:x, cy:y1, r:4, class:'contact'});
+      const cBot = svgEl('circle', {cx:x, cy:y2, r:4, class:'contact'});
+      const bladeClosed = svgEl('line', {x1:x, y1:y1, x2:x, y2:y2, class:'blade closed'});
+      const bladeOpen = svgEl('line', {x1:x, y1:y2, x2:x+18, y2:y1+18, class:'blade open'});
+      g.appendChild(cTop);
+      g.appendChild(cBot);
+      g.appendChild(bladeOpen);
+      g.appendChild(bladeClosed);
+
+      const lbl = svgEl('text', {x:x+24, y:y+5, class:'switch-label'});
+      lbl.textContent = id;
+      g.appendChild(lbl);
+
+      svg.appendChild(g);
+      return {g};
+    }
+
+    if (orientation === 'horizontal') {
+      const len = 64;
+      const x1 = x - len/2;
+      const x2 = x + len/2;
+      const cL = svgEl('circle', {cx:x1, cy:y, r:4, class:'contact'});
+      const cR = svgEl('circle', {cx:x2, cy:y, r:4, class:'contact'});
+      const bladeClosed = svgEl('line', {x1:x1, y1:y, x2:x2, y2:y, class:'blade closed'});
+      const bladeOpen = svgEl('line', {x1:x1, y1:y, x2:x2-14, y2:y-18, class:'blade open'});
+      g.appendChild(cL);
+      g.appendChild(cR);
+      g.appendChild(bladeOpen);
+      g.appendChild(bladeClosed);
+
+      const lbl = svgEl('text', {x:x-12, y:y-16, class:'switch-label'});
+      lbl.textContent = id;
+      g.appendChild(lbl);
+
+      svg.appendChild(g);
+      return {g};
+    }
+  }
+
+  function setSwitchSPST(swObj, state) {
+    swObj.g.classList.toggle('on', state === 1);
+  }
+
+  function createSwitchSPDT(svg, xCommon, y, x1, x0, id) {
+    const g = svgEl('g', {class:'switch spdt svgClickable', 'data-switch': id, tabindex:'0', role:'button'});
+
+    const cCommon = svgEl('circle', {cx:xCommon, cy:y, r:4, class:'contact'});
+    const c1 = svgEl('circle', {cx:x1, cy:y, r:4, class:'contact'});
+    const c0 = svgEl('circle', {cx:x0, cy:y, r:4, class:'contact'});
+
+    const bladeP0 = svgEl('line', {x1:xCommon, y1:y, x2:x0, y2:y, class:'blade p0'});
+    const bladeP1 = svgEl('line', {x1:xCommon, y1:y, x2:x1, y2:y, class:'blade p1'});
+
+    const lbl = svgEl('text', {x:xCommon-10, y:y-10, class:'switch-label'});
+    lbl.textContent = id;
+
+    const p1 = svgEl('text', {x:x1-4, y:y-10, class:'posLabel'});
+    p1.textContent = '1';
+    const p0 = svgEl('text', {x:x0-4, y:y-10, class:'posLabel'});
+    p0.textContent = '0';
+
+    g.appendChild(cCommon);
+    g.appendChild(c1);
+    g.appendChild(c0);
+    g.appendChild(bladeP0);
+    g.appendChild(bladeP1);
+    g.appendChild(lbl);
+    g.appendChild(p1);
+    g.appendChild(p0);
+
+    svg.appendChild(g);
+    return {g};
+  }
+
+  function setSwitchSPDT(swObj, pos1) {
+    // pos1: 1 => connects to contact "1" (x1). 0 => connects to contact "0" (x0)
+    swObj.g.classList.toggle('on', pos1 === 1);
+  }
+
+  function generateCombinations(n) {
+    const combos = [];
+    for (let i = 0; i < (1<<n); i++) {
+      const arr = [];
+      for (let bit = n-1; bit >= 0; bit--) arr.push((i>>bit)&1);
+      combos.push(arr);
+    }
+    return combos;
+  }
+
+  function stateToIndex(ids, st) {
+    let idx = 0;
+    for (const id of ids) idx = (idx<<1) | (st[id] ? 1 : 0);
+    return idx;
+  }
+
+  /* --------- SVG builders for the 5 circuits --------- */
+
+  function svgCircuit1() {
+    const svg = svgEl('svg', {viewBox:'0 0 360 280'});
+
+    const xL=80, xR=280, yB=240, yT=40;
+
+    // Stromquelle (2 nahe Klemmen wie im Arbeitsblatt)
+    const src = sourceTerminals(svg, 180, yB);
+
+    // Verbindung der Schaltung zur Stromquelle
+    svg.appendChild(line(xL, yB, src.xL, yB));
+    svg.appendChild(line(xR, yB, src.xR, yB));
+
+    // Wires (split around components)
+    // Left vertical up to S1 bottom
+    svg.appendChild(line(xL,yB, xL,215));
+    // Between S1 top and L1 bottom
+    svg.appendChild(line(xL,165, xL,138));
+    // Between L1 top and top wire
+    svg.appendChild(line(xL,102, xL,yT));
+
+    // Top wire
+    svg.appendChild(line(xL,yT, xR,yT));
+
+    // Right vertical: from top to L2 top
+    svg.appendChild(line(xR,yT, xR,102));
+    // L2 bottom to S2 top
+    svg.appendChild(line(xR,138, xR,165));
+    // S2 bottom to terminal
+    svg.appendChild(line(xR,215, xR,yB));
+
+    const sw1 = createSwitchSPST(svg, xL,190,'S1','vertical');
+    const sw2 = createSwitchSPST(svg, xR,190,'S2','vertical');
+
+    const l1 = createLamp(svg, xL,120,'L1');
+    const l2 = createLamp(svg, xR,120,'L2');
+
+    return {svg, switches:{S1: sw1, S2: sw2}, lamps:{L1:l1, L2:l2}};
+  }
+
+  function svgCircuit2() {
+    const svg = svgEl('svg', {viewBox:'0 0 360 280'});
+
+    const xL=80, xR=280, yB=240, yT=40;
+    const yMid=150;
+
+    // Stromquelle (2 nahe Klemmen wie im Arbeitsblatt)
+    const src = sourceTerminals(svg, 180, yB);
+
+    // Verbindung der Schaltung zur Stromquelle
+    svg.appendChild(line(xL, yB, src.xL, yB));
+    svg.appendChild(line(xR, yB, src.xR, yB));
+
+    // Right vertical
+    svg.appendChild(line(xR,yB, xR,yT));
+
+    // Top wire (split by L2)
+    svg.appendChild(line(xR,yT, 198,yT));
+    svg.appendChild(line(162,yT, xL,yT));
+
+    // Left vertical (split by L1)
+    svg.appendChild(line(xL,yT, xL,82));
+    svg.appendChild(line(xL,118, xL,yMid));
+
+    // Branch to S1 (down)
+    svg.appendChild(line(xL,yMid, xL,170));
+    // Branch to S2 (right then down)
+    svg.appendChild(line(xL,yMid, 170,yMid));
+    svg.appendChild(line(170,yMid, 170,170));
+
+    // Bottom node (connect switch bottoms to left terminal)
+    svg.appendChild(line(xL,220, xL,yB));
+    svg.appendChild(line(170,220, 170,yB));
+    svg.appendChild(line(170,yB, xL,yB));
+
+    const sw1 = createSwitchSPST(svg, xL,195,'S1','vertical');
+    const sw2 = createSwitchSPST(svg, 170,195,'S2','vertical');
+
+    // Wires around switches (gap is inside switch symbol, but we already draw continuous lines to endpoints)
+    // We'll draw short stubs to indicate connection points:
+    svg.appendChild(line(xL,170, xL,167));
+    svg.appendChild(line(xL,223, xL,220));
+
+    svg.appendChild(line(170,170, 170,167));
+    svg.appendChild(line(170,223, 170,220));
+
+    const l1 = createLamp(svg, xL,100,'L1');
+    const l2 = createLamp(svg, 180,yT,'L2');
+
+    return {svg, switches:{S1: sw1, S2: sw2}, lamps:{L1:l1, L2:l2}};
+  }
+
+  function svgCircuit3() {
+    const svg = svgEl('svg', {viewBox:'0 0 360 280'});
+
+    const xL=80, xR=280, yB=240, yT=40;
+    const xBy=220;
+
+    // Stromquelle (2 nahe Klemmen wie im Arbeitsblatt)
+    const src = sourceTerminals(svg, 180, yB);
+
+    // Verbindung der Schaltung zur Stromquelle
+    svg.appendChild(line(xL, yB, src.xL, yB));
+    svg.appendChild(line(xR, yB, src.xR, yB));
+
+    // Left vertical: terminal to S1 bottom
+    svg.appendChild(line(xL,yB, xL,215));
+    // S1 top to L1 bottom
+    svg.appendChild(line(xL,165, xL,138));
+    // L1 top to top
+    svg.appendChild(line(xL,102, xL,yT));
+
+    // Top wire
+    svg.appendChild(line(xL,yT, xR,yT));
+
+    // Right vertical split by L2
+    svg.appendChild(line(xR,yT, xR,102));
+    svg.appendChild(line(xR,138, xR,yB));
+
+    // Bypass branch from top node to bottom node via S2 (parallel to L2)
+    svg.appendChild(line(xBy,yT, xBy,110));
+    svg.appendChild(line(xBy,210, xBy,yB));
+    svg.appendChild(line(xR,yT, xBy,yT));
+    svg.appendChild(line(xR,yB, xBy,yB));
+
+    const sw1 = createSwitchSPST(svg, xL,190,'S1','vertical');
+    const sw2 = createSwitchSPST(svg, xBy,160,'S2','vertical');
+
+    const l1 = createLamp(svg, xL,120,'L1');
+    const l2 = createLamp(svg, xR,120,'L2');
+
+    return {svg, switches:{S1: sw1, S2: sw2}, lamps:{L1:l1, L2:l2}};
+  }
+
+  function svgCircuit4() {
+    const svg = svgEl('svg', {viewBox:'0 0 360 280'});
+
+    const xTermR=300, yB=240, yT=40;
+    const xC=95, x1=145, x0=220;
+    const yS2=80, yS1=210;
+
+    // Stromquelle (2 nahe Klemmen wie im Arbeitsblatt)
+    const src = sourceTerminals(svg, 180, yB);
+
+    // Outer top wire from S2 common to right
+    svg.appendChild(line(xC,yS2, xTermR, yS2));
+
+    // Right vertical with L2 (split around L2)
+    svg.appendChild(line(xTermR,yS2, xTermR,100));
+    svg.appendChild(line(xTermR,136, xTermR,yB));
+
+    // Verbindung zur Stromquelle (unten)
+    svg.appendChild(line(xTermR, yB, src.xR, yB));
+
+    // Bottom right to terminal already drawn; no bottom wire between terminals.
+
+    // Travelers between switches
+    svg.appendChild(line(x1,yS2, x1,yS1));
+    // Traveler 0 with L1 in the middle (split)
+    svg.appendChild(line(x0,yS2, x0,120));
+    svg.appendChild(line(x0,156, x0,yS1));
+
+    // Connections from S1 common to left terminal
+    svg.appendChild(line(xC,yS1, xC,yB));
+    svg.appendChild(line(xC,yB, src.xL,yB));
+
+    const sw2 = createSwitchSPDT(svg, xC, yS2, x1, x0, 'S2');
+    const sw1 = createSwitchSPDT(svg, xC, yS1, x1, x0, 'S1');
+
+    const l1 = createLamp(svg, x0,138,'L1');
+    const l2 = createLamp(svg, xTermR,118,'L2');
+
+    return {svg, switches:{S1: sw1, S2: sw2}, lamps:{L1:l1, L2:l2}};
+  }
+
+  function svgCircuit5() {
+    const svg = svgEl('svg', {viewBox:'0 0 360 280'});
+
+    const xL=80, xR=280, yB=240, yT=40;
+    const yNodeA=165, yNodeB=165;
+
+    // Stromquelle (2 nahe Klemmen wie im Arbeitsblatt)
+    const src = sourceTerminals(svg, 180, yB);
+
+    // Verbindung der Schaltung zur Stromquelle
+    svg.appendChild(line(xL, yB, src.xL, yB));
+    svg.appendChild(line(xR, yB, src.xR, yB));
+
+    // Left vertical: terminal to S1 bottom
+    svg.appendChild(line(xL,yB, xL,215));
+    // S1 top to node A
+    svg.appendChild(line(xL,165, xL,yNodeA));
+    // Node A to L1 bottom
+    svg.appendChild(line(xL,yNodeA, xL,138));
+    // L1 top to top
+    svg.appendChild(line(xL,102, xL,yT));
+
+    // Top wire with L2 (split)
+    svg.appendChild(line(xL,yT, 162,yT));
+    svg.appendChild(line(198,yT, xR,yT));
+
+    // Right vertical: top to S3
+    svg.appendChild(line(xR,yT, xR,100));
+    // S3 to node B
+    svg.appendChild(line(xR,136, xR,yNodeB));
+    // Node B to L3 top
+    svg.appendChild(line(xR,yNodeB, xR,192));
+    // L3 bottom to terminal
+    svg.appendChild(line(xR,228, xR,yB));
+
+    // Middle branch node A to node B with S2 (horizontal)
+    svg.appendChild(line(xL,yNodeA, 120,yNodeA));
+    svg.appendChild(line(200,yNodeA, xR,yNodeA));
+
+    const sw1 = createSwitchSPST(svg, xL,190,'S1','vertical');
+    const sw3 = createSwitchSPST(svg, xR,118,'S3','vertical');
+    const sw2 = createSwitchSPST(svg, 160,yNodeA,'S2','horizontal');
+
+    const l1 = createLamp(svg, xL,120,'L1');
+    const l2 = createLamp(svg, 180,yT,'L2');
+    const l3 = createLamp(svg, xR,210,'L3');
+
+    return {svg, switches:{S1: sw1, S2: sw2, S3: sw3}, lamps:{L1:l1, L2:l2, L3:l3}};
+  }
+
+  /* --------- Circuit definitions (logic + UI builder) --------- */
+
+  const circuits = [
+    {
+      id: 'c1',
+      title: '1) UND-Schaltung',
+      subtitle: '0 = offen, 1 = geschlossen',
+      switchIds: ['S1','S2'],
+      switchTypes: {S1:'spst', S2:'spst'},
+      lampIds: ['L1','L2'],
+      buildSvg: svgCircuit1,
+      logic: (s) => {
+        const on = (s.S1 & s.S2) ? 1 : 0;
+        return {L1:on, L2:on};
+      }
+    },
+    {
+      id: 'c2',
+      title: '2) ODER-Schaltung',
+      subtitle: '0 = offen, 1 = geschlossen',
+      switchIds: ['S1','S2'],
+      switchTypes: {S1:'spst', S2:'spst'},
+      lampIds: ['L1','L2'],
+      buildSvg: svgCircuit2,
+      logic: (s) => {
+        const on = (s.S1 | s.S2) ? 1 : 0;
+        return {L1:on, L2:on};
+      }
+    },
+    {
+      id: 'c3',
+      title: '3) "Kurzschluss"',
+      subtitle: 'S2 überbrückt L2 (Kurzschluss)',
+      switchIds: ['S1','S2'],
+      switchTypes: {S1:'spst', S2:'spst'},
+      lampIds: ['L1','L2'],
+      buildSvg: svgCircuit3,
+      logic: (s) => {
+        return {
+          L1: s.S1 ? 1 : 0,
+          L2: (s.S1 && !s.S2) ? 1 : 0,
+        };
+      }
+    },
+    {
+      id: 'c4',
+      title: '4) Wechselschaltung',
+      subtitle: '0/1 = Schalterstellung',
+      switchIds: ['S1','S2'],
+      switchTypes: {S1:'spdt', S2:'spdt'},
+      lampIds: ['L1','L2'],
+      buildSvg: svgCircuit4,
+      logic: (s) => {
+        const same = (s.S1 === s.S2) ? 1 : 0;
+        return {
+          L2: same,
+          L1: (s.S1 === 0 && s.S2 === 0) ? 1 : 0,
+        };
+      }
+    },
+    {
+      id: 'c5',
+      title: '5) Komplizierte Schaltung',
+      subtitle: '0 = offen, 1 = geschlossen',
+      switchIds: ['S1','S2','S3'],
+      switchTypes: {S1:'spst', S2:'spst', S3:'spst'},
+      lampIds: ['L1','L2','L3'],
+      buildSvg: svgCircuit5,
+      logic: (s) => {
+        const l1 = (s.S1 && !s.S2 && s.S3) ? 1 : 0;
+        const l2 = l1;
+        const l3 = (s.S1 && (s.S2 || s.S3)) ? 1 : 0;
+        return {L1:l1, L2:l2, L3:l3};
+      }
+    },
+  ];
+
+  /* --------- App build + state management --------- */
+
+  const app = document.getElementById('app');
+  const state = {}; // per-circuit
+
+  function comboLabel(bits) {
+    return bits.join('');
+  }
+
+  function buildTruthTable(circ) {
+    const n = circ.switchIds.length;
+    const combos = generateCombinations(n);
+
+    const table = htmlEl('table', {class:'truth'});
+    const thead = htmlEl('thead');
+    const trh = htmlEl('tr');
+    trh.appendChild(htmlEl('th', {text:'Kombi'}));
+
+    // Column headers
+    const colCells = Array.from({length: combos.length}, () => []);
+
+    combos.forEach((bits, idx) => {
+      const th = htmlEl('th', {class:'clickable', 'data-combo': String(idx), text: comboLabel(bits)});
+      trh.appendChild(th);
+      colCells[idx].push(th);
+    });
+    thead.appendChild(trh);
+
+    const tbody = htmlEl('tbody');
+
+    // Switch rows (wie im Arbeitsblatt vorgegeben)
+    for (let r = 0; r < circ.switchIds.length; r++) {
+      const sid = circ.switchIds[r];
+      const tr = htmlEl('tr');
+      tr.appendChild(htmlEl('td', {text: sid}));
+      combos.forEach((bits, idx) => {
+        const td = htmlEl('td', {text: String(bits[r])});
+        tr.appendChild(td);
+        colCells[idx].push(td);
+      });
+      tbody.appendChild(tr);
+    }
+
+    // Lamp rows (werden beim Ausprobieren gefüllt)
+    const lampCells = {}; // lampCells[L1][idx] = <td>
+    for (const lid of circ.lampIds) {
+      lampCells[lid] = []
+      const tr = htmlEl('tr');
+      tr.appendChild(htmlEl('td', {text: lid}));
+      combos.forEach((bits, idx) => {
+        const td = htmlEl('td', {text: ''});
+        td.setAttribute('data-lamp', lid);
+        td.setAttribute('data-idx', String(idx));
+        tr.appendChild(td);
+        colCells[idx].push(td);
+        lampCells[lid][idx] = td;
+      });
+      tbody.appendChild(tr);
+    }
+
+    table.appendChild(thead);
+    table.appendChild(tbody);
+
+    return {table, combos, colCells, lampCells};
+  }
+
+  function buildSwitchControls(circ) {
+    const wrap = htmlEl('div', {class:'controls'});
+
+    const inputs = {};
+    const valSpans = {};
+
+    for (const sid of circ.switchIds) {
+      const input = htmlEl('input', {type:'checkbox', id: `${circ.id}-${sid}`});
+      // Default: all 0
+      input.checked = false;
+
+      const val = htmlEl('span', {class:'val', text:'0'});
+      valSpans[sid] = val;
+
+      const typeHint = (circ.switchTypes[sid] === 'spdt')
+        ? htmlEl('small', {text:'(0/1 Stellung)'} )
+        : htmlEl('small', {text:'(0 offen / 1 zu)'} );
+
+      const label = htmlEl('label', {class:'toggle', for: `${circ.id}-${sid}`}, [
+        input,
+        htmlEl('span', {class:'pill'}),
+        htmlEl('span', {class:'lbl'}, [
+          htmlEl('span', {text: `${sid}: `}),
+          val,
+          htmlEl('span', {text:' '}),
+          typeHint,
+        ])
+      ]);
+
+      wrap.appendChild(label);
+      inputs[sid] = input;
+    }
+
+    return {wrap, inputs, valSpans};
+  }
+
+  function readSwitchState(circ) {
+    const s = {};
+    const rec = state[circ.id];
+    for (const sid of circ.switchIds) s[sid] = rec.inputs[sid].checked ? 1 : 0;
+    return s;
+  }
+
+  function setSwitchState(circ, s) {
+    const rec = state[circ.id];
+    for (const sid of circ.switchIds) {
+      rec.inputs[sid].checked = !!s[sid];
+    }
+    updateCircuit(circ.id);
+  }
+
+  function updateCircuit(circuitId) {
+    const circ = circuits.find(c => c.id === circuitId);
+    const rec = state[circuitId];
+
+    const s = readSwitchState(circ);
+    const idx = stateToIndex(circ.switchIds, s);
+
+    // Update numeric display for switch controls
+    for (const sid of circ.switchIds) {
+      rec.valSpans[sid].textContent = String(s[sid]);
+    }
+
+    // Update SVG switches
+    for (const sid of circ.switchIds) {
+      const t = circ.switchTypes[sid];
+      if (t === 'spdt') setSwitchSPDT(rec.svgRefs.switches[sid], s[sid]);
+      else setSwitchSPST(rec.svgRefs.switches[sid], s[sid]);
+    }
+
+    // Compute outputs
+    const outs = circ.logic(s);
+
+    // Update SVG lamps (und 0/1 im Schaltbild)
+    for (const lid of circ.lampIds) {
+      setLamp(rec.svgRefs.lamps[lid], outs[lid] ? 1 : 0);
+    }
+
+    // Schreibe die aktuelle Beobachtung in die Tabelle (nur die aktuelle Spalte)
+    if (rec.lampCells) {
+      for (const lid of circ.lampIds) {
+        const cell = rec.lampCells[lid] && rec.lampCells[lid][idx];
+        if (cell) cell.textContent = String(outs[lid] ?? 0);
+      }
+    }
+
+    // Highlight truth table column
+    if (rec.activeColIndex != null) {
+      for (const cell of rec.colCells[rec.activeColIndex]) {
+        cell.classList.remove('activeCell');
+        cell.classList.remove('activeCol');
+      }
+    }
+    for (const cell of rec.colCells[idx]) {
+      cell.classList.add('activeCell');
+      cell.classList.add('activeCol');
+    }
+    rec.activeColIndex = idx;
+  }
+
+
+  function clearLampTable(circuitId) {
+    const circ = circuits.find(c => c.id === circuitId);
+    const rec = state[circuitId];
+    if (!circ || !rec || !rec.lampCells) return;
+
+    for (const lid of circ.lampIds) {
+      const row = rec.lampCells[lid] || [];
+      for (let i = 0; i < row.length; i++) row[i].textContent = '';
+    }
+
+    // Keep current column highlighted and immediately re-write current observation
+    updateCircuit(circuitId);
+  }
+
+  function fillAllSolutions(circuitId) {
+    const circ = circuits.find(c => c.id === circuitId);
+    const rec = state[circuitId];
+    if (!circ || !rec || !rec.lampCells) return;
+
+    for (let idx = 0; idx < rec.combos.length; idx++) {
+      const bits = rec.combos[idx];
+      const s = {};
+      circ.switchIds.forEach((sid, i) => s[sid] = bits[i]);
+      const outs = circ.logic(s);
+      for (const lid of circ.lampIds) {
+        const cell = rec.lampCells[lid] && rec.lampCells[lid][idx];
+        if (cell) cell.textContent = String(outs[lid] ?? 0);
+      }
+    }
+
+    updateCircuit(circuitId);
+  }
+
+  function buildCircuitCard(circ) {
+    const section = htmlEl('section', {class:'circuit', id: circ.id});
+
+    const head = htmlEl('div', {class:'c-head'});
+    head.appendChild(htmlEl('div', {}, [
+      htmlEl('h2', {text: circ.title}),
+      htmlEl('p', {class:'hint', text: circ.subtitle}),
+    ]));
+
+    // Legend on right
+    head.appendChild(htmlEl('div', {class:'legend'}, [
+      htmlEl('span', {}, [htmlEl('span', {class:'dot on'}), htmlEl('span', {text:'Lampe: 1 = leuchtet'})]),
+      htmlEl('span', {}, [htmlEl('span', {class:'dot off'}), htmlEl('span', {text:'Lampe: 0 = aus'})]),
+      htmlEl('span', {}, [htmlEl('span', {text:'Tabelle: aktuelle Spalte rot'})]),
+    ]));
+
+    const body = htmlEl('div', {class:'c-body'});
+
+    // Left: diagram + controls
+    const left = htmlEl('div', {class:'diagramWrap'});
+    const leftPanel = htmlEl('div', {class:'panel'});
+
+    const {wrap: controlsWrap, inputs, valSpans} = buildSwitchControls(circ);
+    leftPanel.appendChild(controlsWrap);
+
+    const btnRow = htmlEl('div', {class:'btnrow'});
+    const btnReset = htmlEl('button', {type:'button', text:'Alle Schalter auf 0'});
+    btnReset.addEventListener('click', () => {
+      const zeros = {};
+      circ.switchIds.forEach(sid => zeros[sid] = 0);
+      setSwitchState(circ, zeros);
+    });
+    btnRow.appendChild(btnReset);
+
+    const btnClear = htmlEl('button', {type:'button', text:'Tabelle (Lampen) leeren'});
+    btnClear.addEventListener('click', () => clearLampTable(circ.id));
+    btnRow.appendChild(btnClear);
+
+    const btnFill = htmlEl('button', {type:'button', text:'Lösung ausfüllen'});
+    btnFill.addEventListener('click', () => fillAllSolutions(circ.id));
+    btnRow.appendChild(btnFill);
+
+    leftPanel.appendChild(btnRow);
+
+    const svgRefs = circ.buildSvg();
+    left.appendChild(leftPanel);
+    left.appendChild(svgRefs.svg);
+
+    // Right: table
+    const right = htmlEl('div', {class:'panel'});
+    const {table, combos, colCells, lampCells} = buildTruthTable(circ);
+    right.appendChild(table);
+
+    body.appendChild(left);
+    body.appendChild(right);
+
+    section.appendChild(head);
+    section.appendChild(body);
+
+    // Store state
+    state[circ.id] = {
+      inputs,
+      valSpans,
+      svgRefs,
+      combos,
+      colCells,
+      lampCells,
+      activeColIndex: null,
+    };
+
+    // Wire up events
+    for (const sid of circ.switchIds) {
+      inputs[sid].addEventListener('change', () => updateCircuit(circ.id));
+    }
+
+    // Click switches directly in SVG
+    svgRefs.svg.querySelectorAll('[data-switch]').forEach(node => {
+      node.addEventListener('click', (ev) => {
+        const sw = node.getAttribute('data-switch');
+        if (!sw || !inputs[sw]) return;
+        inputs[sw].checked = !inputs[sw].checked;
+        inputs[sw].dispatchEvent(new Event('change', {bubbles:true}));
+      });
+      node.addEventListener('keydown', (ev) => {
+        if (ev.key === 'Enter' || ev.key === ' ') {
+          ev.preventDefault();
+          node.click();
+        }
+      });
+    });
+
+    // Click column header to set switch combo
+    table.querySelectorAll('thead th[data-combo]').forEach(th => {
+      th.addEventListener('click', () => {
+        const idx = Number(th.getAttribute('data-combo'));
+        const bits = combos[idx];
+        const s = {};
+        circ.switchIds.forEach((sid,i)=> s[sid] = bits[i]);
+        setSwitchState(circ, s);
+      });
+    });
+
+    // Initialize
+    updateCircuit(circ.id);
+
+    return section;
+  }
+
+  for (const circ of circuits) app.appendChild(buildCircuitCard(circ));
+
+})();
+</script>
+</body>
+</html>
